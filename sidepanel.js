@@ -47,8 +47,33 @@ const changelogList = document.getElementById('changelogList');
 let currentTabId = null;
 let currentActiveVersion = '1.8.0';
 
-// Changelog data
-const CHANGELOG_DATA = [
+// Changelog data (Local Fallback & Baseline)
+let CHANGELOG_DATA = [
+  {
+    version: '1.8.3',
+    date: '2026-08-30',
+    highlights: [
+      'Live Dynamic Changelog: Changelog sekarang otomatis sync langsung dari GitHub Releases API secara real-time.',
+      'Auto-sync Release Notes: Setiap build/release baru di GitHub otomatis muncul di accordion changelog extension tanpa perlu hardcode.',
+      'Hug Content Fix: Section Export & Code Generator, Selected Element, dan card sidebar lainnya kini hug content presisi (fit-content).'
+    ]
+  },
+  {
+    version: '1.8.2',
+    date: '2026-08-30',
+    highlights: [
+      'UI Layout Fit-Content: Memperbaiki styling container flexbox agar card Export dan Selected Element fit-content rapat (hug content).',
+      'Peningkatan area scrollable sidebar.'
+    ]
+  },
+  {
+    version: '1.8.1',
+    date: '2026-08-30',
+    highlights: [
+      'Fix Context Invalidation: Menambahkan safeSendMessage guard agar extension tidak crash saat di-reload di tab aktif.',
+      'Auto teardown dan event unbind saat runtime extension invalid.'
+    ]
+  },
   {
     version: '1.8.0',
     date: '2026-08-30',
@@ -92,9 +117,9 @@ if (chrome.runtime?.getManifest) {
 }
 
 // Render Changelog Accordion
-function renderChangelog() {
+function renderChangelog(data = CHANGELOG_DATA) {
   if (!changelogList) return;
-  changelogList.innerHTML = CHANGELOG_DATA.map((item, idx) => `
+  changelogList.innerHTML = data.map((item, idx) => `
     <div class="changelog-item">
       <div class="changelog-header" data-idx="${idx}">
         <span>v${item.version} <span style="font-weight: 400; color: var(--muted-foreground); font-size: 9px;">(${item.date})</span></span>
@@ -123,6 +148,7 @@ function renderChangelog() {
 }
 
 renderChangelog();
+fetchGithubReleasesAndChangelog();
 
 // Initialize active tab state
 async function initPanel() {
@@ -220,9 +246,53 @@ function renderElementInfo(data) {
   if (swatchBg) swatchBg.style.backgroundColor = st.bgHex || '#ffffff';
 }
 
-// ─── OTA Updates Checker & Reloader ──────────────────────────────────────────
+// ─── OTA Updates Checker & Dynamic Changelog Sync ───────────────────────────
+async function fetchGithubReleasesAndChangelog() {
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases?per_page=10&_t=${Date.now()}`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+
+    if (res.ok) {
+      const releases = await res.json();
+      if (Array.isArray(releases) && releases.length > 0) {
+        const dynamicChangelog = releases.map(rel => {
+          const ver = (rel.tag_name || '').replace(/^v/, '');
+          const dateStr = rel.published_at ? rel.published_at.slice(0, 10) : new Date().toISOString().slice(0, 10);
+          
+          let highlights = [];
+          if (rel.body) {
+            highlights = rel.body
+              .split('\n')
+              .map(l => l.trim().replace(/^[-*•]\s+/, '').replace(/^###\s+/, '').replace(/^##\s+/, ''))
+              .filter(l => l.length > 0 && !l.startsWith('#'));
+          }
+          if (highlights.length === 0) {
+            highlights = [rel.name || `Release v${ver}`];
+          }
+
+          return {
+            version: ver,
+            date: dateStr,
+            highlights
+          };
+        });
+
+        if (dynamicChangelog.length > 0) {
+          renderChangelog(dynamicChangelog);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('[Element Picker] Gagal fetch GitHub releases changelog:', err);
+  }
+}
+
 async function checkGithubOTA(isManual = false) {
   if (updateStatusText && isManual) updateStatusText.textContent = 'Memeriksa GitHub...';
+
+  // Also refresh changelog
+  fetchGithubReleasesAndChangelog();
 
   try {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest?_t=${Date.now()}`, {
