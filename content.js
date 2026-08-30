@@ -16,19 +16,40 @@
   const isMac = /mac/i.test(platform) || /Macintosh|Mac OS X/i.test(navigator.userAgent);
   document.addEventListener('keydown', onGlobalToggleShortcut, true);
 
+  // ─── Safe Runtime Messaging Helper (Guards Context Invalidation) ──────────
+  function isExtensionValid() {
+    try {
+      return Boolean(typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.id);
+    } catch {
+      return false;
+    }
+  }
+
+  function safeSendMessage(message, callback) {
+    if (!isExtensionValid()) return;
+    try {
+      chrome.runtime.sendMessage(message, (response) => {
+        const err = chrome.runtime.lastError;
+        if (err && String(err.message || '').includes('Extension context invalidated')) {
+          disablePicker();
+          return;
+        }
+        if (typeof callback === 'function') callback(response, err);
+      });
+    } catch (e) {
+      if (String(e?.message || '').includes('Extension context invalidated')) {
+        disablePicker();
+      }
+    }
+  }
+
   // ─── Auto Sync on Load / Navigation ───────────────────────────────────────
   function syncWithBackground() {
-    try {
-      if (!chrome.runtime?.id) return;
-      chrome.runtime.sendMessage({ action: 'getInitialState' }, (response) => {
-        if (chrome.runtime.lastError) return;
-        if (response?.isActive) {
-          enablePicker();
-        }
-      });
-    } catch {
-      // Extension context invalidated
-    }
+    safeSendMessage({ action: 'getInitialState' }, (response) => {
+      if (response?.isActive) {
+        enablePicker();
+      }
+    });
   }
 
   if (document.readyState === 'loading') {
@@ -323,9 +344,7 @@
     e.preventDefault();
     e.stopPropagation();
     e.stopImmediatePropagation();
-    chrome.runtime.sendMessage({ action: 'togglePickerFromContentShortcut' }, () => {
-      void chrome.runtime.lastError;
-    });
+    safeSendMessage({ action: 'togglePickerFromContentShortcut' });
   }
 
   // ─── Event handlers ───────────────────────────────────────────────────────
@@ -352,19 +371,19 @@
 
   function notifyElementSelected(el) {
     if (!el) {
-      chrome.runtime.sendMessage({ action: 'elementDeselected' }).catch(() => {});
+      safeSendMessage({ action: 'elementDeselected' });
       return;
     }
     const label = getElementLabel(el);
     const styles = getComputedStylesInfo(el);
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: 'elementSelected',
       data: {
         hasSelection: true,
         label,
         styles
       }
-    }).catch(() => {});
+    });
   }
 
   function onContextMenu(e) {
@@ -772,13 +791,13 @@ ${styles.borderRadius ? `border-radius: ${styles.borderRadius};\n` : ''}`;
   }
 
   function downloadZip(pngDataUrl, htmlContent, filename, successMessage) {
-    chrome.runtime.sendMessage({
+    safeSendMessage({
       action: 'downloadZip',
       pngDataUrl,
       htmlContent,
       filename
-    }, (response) => {
-      if (chrome.runtime.lastError || !response?.success) {
+    }, (response, err) => {
+      if (err || !response?.success) {
         showToast('✕', 'Save failed');
         return;
       }
@@ -920,11 +939,11 @@ ${styles.borderRadius ? `border-radius: ${styles.borderRadius};\n` : ''}`;
     epEls.forEach(e => e.style.visibility = 'hidden');
 
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ action: 'captureTab' }, (response) => {
+      safeSendMessage({ action: 'captureTab' }, (response, err) => {
         epEls.forEach(e => e.style.visibility = '');
 
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
+        if (err) {
+          reject(new Error(err.message));
           return;
         }
 
@@ -951,11 +970,11 @@ ${styles.borderRadius ? `border-radius: ${styles.borderRadius};\n` : ''}`;
     epEls.forEach(e => e.style.visibility = 'hidden');
 
     return new Promise((resolve, reject) => {
-      chrome.runtime.sendMessage({ action: 'captureTab' }, (response) => {
+      safeSendMessage({ action: 'captureTab' }, (response, err) => {
         epEls.forEach(e => e.style.visibility = '');
 
-        if (chrome.runtime.lastError) {
-          reject(new Error(chrome.runtime.lastError.message));
+        if (err) {
+          reject(new Error(err.message));
           return;
         }
 
