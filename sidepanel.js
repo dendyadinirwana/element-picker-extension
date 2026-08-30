@@ -98,7 +98,9 @@ function renderChangelog() {
     <div class="changelog-item">
       <div class="changelog-header" data-idx="${idx}">
         <span>v${item.version} <span style="font-weight: 400; color: var(--muted-foreground); font-size: 9px;">(${item.date})</span></span>
-        <span style="font-size: 9px;">${idx === 0 ? '▼' : '▶'}</span>
+        <svg class="chevron-icon" id="chev-${idx}" viewBox="0 0 16 16" width="12" height="12" fill="currentColor" style="transition: transform 0.2s ease; transform: ${idx === 0 ? 'rotate(180deg)' : 'rotate(0deg)'}; color: var(--muted-foreground);">
+          <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+        </svg>
       </div>
       <div class="changelog-body" id="cb-${idx}" style="display: ${idx === 0 ? 'flex' : 'none'};">
         ${item.highlights.map(h => `<div>• ${h}</div>`).join('')}
@@ -110,9 +112,12 @@ function renderChangelog() {
     header.addEventListener('click', () => {
       const idx = header.getAttribute('data-idx');
       const body = document.getElementById(`cb-${idx}`);
+      const chev = document.getElementById(`chev-${idx}`);
       const isVisible = body.style.display === 'flex';
       body.style.display = isVisible ? 'none' : 'flex';
-      header.querySelector('span:last-child').textContent = isVisible ? '▶' : '▼';
+      if (chev) {
+        chev.style.transform = isVisible ? 'rotate(0deg)' : 'rotate(180deg)';
+      }
     });
   });
 }
