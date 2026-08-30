@@ -378,6 +378,94 @@
       gap: 10px;
     }
 
+    /* ─── Breadcrumbs Bar in Sidebar ───────────────────────────────────────── */
+    .breadcrumbs-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px;
+    }
+
+    .breadcrumbs-trail {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+
+    .crumb-chip {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      padding: 3px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--muted-foreground);
+      cursor: pointer;
+      transition: all 0.12s ease;
+      max-width: 130px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .crumb-chip:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .crumb-chip.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: var(--primary-foreground);
+      font-weight: 600;
+    }
+
+    .crumb-divider {
+      font-size: 10px;
+      color: var(--muted-foreground);
+      opacity: 0.6;
+    }
+
+    .hierarchy-nav {
+      display: flex;
+      gap: 5px;
+      border-top: 1px dashed var(--border);
+      padding-top: 6px;
+    }
+
+    .btn-nav-step {
+      flex: 1;
+      padding: 4px 6px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 10px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+
+    .btn-nav-step:hover:not(:disabled) {
+      background: var(--primary-subtle);
+      border-color: var(--primary-border);
+      color: var(--primary);
+    }
+
+    .btn-nav-step:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
     .tag-badge {
       font-family: var(--font-mono);
       font-size: 11px;
@@ -655,6 +743,21 @@
           Klik elemen di halaman web setelah mengaktifkan picker untuk melihat computed styling dan metriks lengkap.
         </div>
         <div class="inspect-content" id="inspectContent" style="display: none;">
+          <!-- Hierarchy Breadcrumbs -->
+          <div class="breadcrumbs-container" id="breadcrumbsContainer">
+            <div class="breadcrumbs-trail" id="breadcrumbsTrail">
+              <!-- Rendered via JS -->
+            </div>
+            <div class="hierarchy-nav">
+              <button class="btn-nav-step" id="btnNavParent" title="Pindah ke elemen Parent (Alt+↑)">
+                <span>↑</span><span>Parent</span>
+              </button>
+              <button class="btn-nav-step" id="btnNavChild" title="Pindah ke elemen Child (Alt+↓)">
+                <span>↓</span><span>Child</span>
+              </button>
+            </div>
+          </div>
+
           <div class="tag-badge" id="inspectTag">&lt;div.container&gt;</div>
           
           <span class="metrics-group-label">Box Model & Layout</span>
@@ -712,13 +815,30 @@
         <span class="section-title">Export & Code Generator</span>
       </div>
       <div class="export-grid">
-        <button class="btn-export" id="actCopyHtml"><span>&lt;/&gt;</span><span>Clean HTML</span></button>
-        <button class="btn-export" id="actCopyJsx"><span>⚛</span><span>React JSX</span></button>
-        <button class="btn-export" id="actCopyPng"><span>📷</span><span>Screenshot PNG</span></button>
-        <button class="btn-export" id="actCopyCss"><span>🎨</span><span>CSS Rules</span></button>
-        <button class="btn-export" id="actCopySelector"><span>#</span><span>CSS Selector</span></button>
-        <button class="btn-export" id="actCopyText"><span>T</span><span>Inner Text</span></button>
-        <button class="btn-export zip-action" id="actSaveZip"><span>📦</span><span>Export Full Standalone ZIP</span></button>
+        <button class="btn-export" id="actCopyHtml" title="Copy clean HTML element">
+          <span>&lt;/&gt;</span><span>HTML</span>
+        </button>
+        <button class="btn-export" id="actCopyJsx" title="Copy as React / JSX component">
+          <span>⚛</span><span>JSX</span>
+        </button>
+        <button class="btn-export" id="actCopyPng" title="Capture and copy screenshot as PNG">
+          <span>📷</span><span>PNG Image</span>
+        </button>
+        <button class="btn-export" id="actSnipArea" title="Area Snip / Box Cropper tool">
+          <span>✂️</span><span>Area Snip</span>
+        </button>
+        <button class="btn-export" id="actCopyCss" title="Copy formatted CSS rules">
+          <span>🎨</span><span>CSS Rules</span>
+        </button>
+        <button class="btn-export" id="actCopySelector" title="Copy full CSS selector path">
+          <span>#</span><span>Selector</span>
+        </button>
+        <button class="btn-export" id="actCopyText" title="Copy text content only">
+          <span>T</span><span>Text</span>
+        </button>
+        <button class="btn-export zip-action" id="actSaveZip" title="Download standalone HTML, CSS & screenshot in ZIP">
+          <span>📦</span><span>Export Full Standalone ZIP</span>
+        </button>
       </div>
     </div>
 

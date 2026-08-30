@@ -13,6 +13,10 @@ const versionTag = document.getElementById('versionTag');
 const inspectEmpty = document.getElementById('inspectEmpty');
 const inspectContent = document.getElementById('inspectContent');
 const inspectTag = document.getElementById('inspectTag');
+const breadcrumbsTrail = document.getElementById('breadcrumbsTrail');
+const btnNavParent = document.getElementById('btnNavParent');
+const btnNavChild = document.getElementById('btnNavChild');
+
 const valDim = document.getElementById('valDim');
 const valLayout = document.getElementById('valLayout');
 const valPadding = document.getElementById('valPadding');
@@ -30,6 +34,7 @@ const txtBgColor = document.getElementById('txtBgColor');
 const actCopyHtml = document.getElementById('actCopyHtml');
 const actCopyJsx = document.getElementById('actCopyJsx');
 const actCopyPng = document.getElementById('actCopyPng');
+const actSnipArea = document.getElementById('actSnipArea');
 const actCopyCss = document.getElementById('actCopyCss');
 const actCopySelector = document.getElementById('actCopySelector');
 const actCopyText = document.getElementById('actCopyText');
@@ -199,10 +204,31 @@ function sendTabAction(menuItemId) {
 actCopyHtml?.addEventListener('click', () => sendTabAction('ep-copy-html'));
 actCopyJsx?.addEventListener('click', () => sendTabAction('ep-copy-jsx'));
 actCopyPng?.addEventListener('click', () => sendTabAction('ep-copy-screenshot'));
+actSnipArea?.addEventListener('click', () => {
+  if (!currentTabId) return;
+  chrome.tabs.sendMessage(currentTabId, { action: 'startAreaSnip' }, () => {
+    void chrome.runtime.lastError;
+  });
+});
 actCopyCss?.addEventListener('click', () => sendTabAction('ep-copy-styles'));
 actCopySelector?.addEventListener('click', () => sendTabAction('ep-copy-selector'));
 actCopyText?.addEventListener('click', () => sendTabAction('ep-copy-text'));
 actSaveZip?.addEventListener('click', () => sendTabAction('ep-save'));
+
+// Hierarchy Parent / Child Navigation
+btnNavParent?.addEventListener('click', () => {
+  if (!currentTabId) return;
+  chrome.tabs.sendMessage(currentTabId, { action: 'selectNav', direction: 'parent' }, () => {
+    void chrome.runtime.lastError;
+  });
+});
+
+btnNavChild?.addEventListener('click', () => {
+  if (!currentTabId) return;
+  chrome.tabs.sendMessage(currentTabId, { action: 'selectNav', direction: 'child' }, () => {
+    void chrome.runtime.lastError;
+  });
+});
 
 function updateUI(isActive) {
   if (isActive) {
@@ -230,6 +256,34 @@ function renderElementInfo(data) {
 
   const st = data.styles || {};
 
+  // Render Breadcrumbs Trail
+  if (breadcrumbsTrail) {
+    const list = data.breadcrumbs || [];
+    if (list.length > 0) {
+      breadcrumbsTrail.innerHTML = list.map((crumb, idx) => `
+        <button class="crumb-chip ${crumb.isCurrent ? 'active' : ''}" data-crumb-index="${idx}" title="${escapeHtml(crumb.label)}">
+          ${escapeHtml(crumb.label)}
+        </button>
+        ${idx < list.length - 1 ? '<span class="crumb-divider">›</span>' : ''}
+      `).join('');
+
+      breadcrumbsTrail.querySelectorAll('.crumb-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const index = parseInt(btn.getAttribute('data-crumb-index'), 10);
+          if (!currentTabId || isNaN(index)) return;
+          chrome.tabs.sendMessage(currentTabId, { action: 'selectBreadcrumbIndex', index }, () => {
+            void chrome.runtime.lastError;
+          });
+        });
+      });
+    } else {
+      breadcrumbsTrail.innerHTML = `<span class="tag-badge">${escapeHtml(data.label || '<element>')}</span>`;
+    }
+  }
+
+  if (btnNavParent) btnNavParent.disabled = !data.hasParent;
+  if (btnNavChild) btnNavChild.disabled = !data.hasChildren;
+
   if (inspectTag) inspectTag.textContent = data.label || '<element>';
   if (valDim) valDim.textContent = `${st.width || 0} × ${st.height || 0} px`;
   if (valLayout) valLayout.textContent = `${st.display || 'block'} (${st.position || 'static'})`;
@@ -244,6 +298,16 @@ function renderElementInfo(data) {
 
   if (txtBgColor) txtBgColor.textContent = st.bgHex || '#ffffff';
   if (swatchBg) swatchBg.style.backgroundColor = st.bgHex || '#ffffff';
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 // ─── OTA Updates Checker & Dynamic Changelog Sync ───────────────────────────

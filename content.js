@@ -369,6 +369,24 @@
     notifyElementSelected(el);
   }
 
+  function getBreadcrumbList(el) {
+    const list = getBreadcrumbElements(el);
+    return list.map((node) => {
+      const tag = node.tagName.toLowerCase();
+      const id = node.id ? `#${node.id}` : '';
+      let cls = '';
+      if (node.className && typeof node.className === 'string') {
+        const firstCls = node.className.trim().split(/\s+/).filter(c => !c.startsWith('ep-'))[0];
+        if (firstCls) cls = '.' + firstCls;
+      }
+      return {
+        label: `${tag}${id}${cls}`,
+        tag,
+        isCurrent: node === el
+      };
+    });
+  }
+
   function notifyElementSelected(el) {
     if (!el) {
       safeSendMessage({ action: 'elementDeselected' });
@@ -376,12 +394,19 @@
     }
     const label = getElementLabel(el);
     const styles = getComputedStylesInfo(el);
+    const breadcrumbs = getBreadcrumbList(el);
+    const hasParent = Boolean(el.parentElement && el.parentElement !== document.body && el.parentElement !== document.documentElement);
+    const hasChildren = Boolean([...el.children].filter(c => !isEpElement(c)).length > 0);
+
     safeSendMessage({
       action: 'elementSelected',
       data: {
         hasSelection: true,
         label,
-        styles
+        styles,
+        breadcrumbs,
+        hasParent,
+        hasChildren
       }
     });
   }
@@ -1171,19 +1196,59 @@ ${exportedOuterHtml}
         sendResponse({
           hasSelection: true,
           label: getElementLabel(target),
-          styles: getComputedStylesInfo(target)
+          styles: getComputedStylesInfo(target),
+          breadcrumbs: getBreadcrumbList(target),
+          hasParent: Boolean(target.parentElement && target.parentElement !== document.body && target.parentElement !== document.documentElement),
+          hasChildren: Boolean([...target.children].filter(c => !isEpElement(c)).length > 0)
         });
       } else {
         sendResponse({ hasSelection: false });
       }
       return true;
+    } else if (message.action === 'selectBreadcrumbIndex') {
+      const target = selectedEl || hoveredEl;
+      if (target) {
+        const list = getBreadcrumbElements(target);
+        const node = list[message.index];
+        if (node) {
+          selectedEl = node;
+          hoveredEl = node;
+          highlightSelected(node);
+          if (menuEl) refreshMenu(node);
+          notifyElementSelected(node);
+        }
+      }
+    } else if (message.action === 'selectNav') {
+      const target = selectedEl || hoveredEl;
+      if (target) {
+        if (message.direction === 'parent') {
+          const parent = target.parentElement;
+          if (parent && !isEpElement(parent) && parent !== document.documentElement && parent !== document.body) {
+            selectedEl = parent;
+            hoveredEl = parent;
+            highlightSelected(parent);
+            if (menuEl) refreshMenu(parent);
+            notifyElementSelected(parent);
+          }
+        } else if (message.direction === 'child') {
+          const child = [...target.children].find(c => !isEpElement(c));
+          if (child) {
+            selectedEl = child;
+            hoveredEl = child;
+            highlightSelected(child);
+            if (menuEl) refreshMenu(child);
+            notifyElementSelected(child);
+          }
+        }
+      }
     } else if (message.action === 'contextMenuAction') {
-      const target = hoveredEl || selectedEl;
+      const target = selectedEl || hoveredEl;
       if (!target) return;
       if (message.menuItemId === 'ep-copy-text') copyText(target);
       else if (message.menuItemId === 'ep-copy-html') copyHtml(target);
       else if (message.menuItemId === 'ep-copy-jsx') copyJsx(target);
       else if (message.menuItemId === 'ep-copy-selector') copySelector(target);
+      else if (message.menuItemId === 'ep-copy-styles') copyComputedCssRules(target);
       else if (message.menuItemId === 'ep-copy-screenshot') copyScreenshotToClipboard(target);
       else if (message.menuItemId === 'ep-save') saveElement(target);
     }
