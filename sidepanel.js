@@ -116,8 +116,7 @@ if (chrome.runtime?.getManifest) {
   const manifest = chrome.runtime.getManifest();
   if (manifest?.version) {
     currentActiveVersion = manifest.version;
-    if (versionTag) versionTag.textContent = `v${manifest.version}`;
-    if (updateStatusText) updateStatusText.textContent = `v${manifest.version} up to date`;
+    if (btnCheckUpdate) btnCheckUpdate.textContent = `v${manifest.version} (Cek Update)`;
   }
 }
 
@@ -353,7 +352,7 @@ async function fetchGithubReleasesAndChangelog() {
 }
 
 async function checkGithubOTA(isManual = false) {
-  if (updateStatusText && isManual) updateStatusText.textContent = 'Memeriksa GitHub...';
+  if (btnCheckUpdate && isManual) btnCheckUpdate.textContent = `v${currentActiveVersion} (Memeriksa...)`;
 
   // Also refresh changelog
   fetchGithubReleasesAndChangelog();
@@ -378,7 +377,7 @@ async function checkGithubOTA(isManual = false) {
     const remoteTag = (release.tag_name || '').replace(/^v/, '');
     handleVersionCheck(remoteTag, release, isManual);
   } catch (err) {
-    if (updateStatusText) updateStatusText.textContent = `v${currentActiveVersion} up to date`;
+    if (btnCheckUpdate) btnCheckUpdate.textContent = `v${currentActiveVersion} (Cek Update)`;
     if (isManual) alert('Tidak dapat terhubung ke GitHub: ' + err.message);
   }
 }
@@ -443,14 +442,14 @@ function handleVersionCheck(remoteVersion, releaseData, isManual) {
     if (otaDesc) {
       otaDesc.innerHTML = formatMarkdownReleaseNotes(releaseData?.body);
     }
-    if (updateStatusText) updateStatusText.textContent = `Update v${remoteVersion} tersedia!`;
+    if (btnCheckUpdate) btnCheckUpdate.textContent = `v${currentActiveVersion} (Ada Update v${remoteVersion})`;
 
     btnOtaDownload.onclick = () => {
       downloadAndReloadUpdate(remoteVersion, releaseData);
     };
   } else {
     if (otaBanner) otaBanner.style.display = 'none';
-    if (updateStatusText) updateStatusText.textContent = `v${currentActiveVersion} versi terbaru`;
+    if (btnCheckUpdate) btnCheckUpdate.textContent = `v${currentActiveVersion} (Cek Update)`;
     if (isManual) {
       alert(`Extension sudah versi terbaru (v${currentActiveVersion}).`);
     }
