@@ -319,6 +319,56 @@ async function checkGithubOTA(isManual = false) {
   }
 }
 
+function formatMarkdownReleaseNotes(rawBody) {
+  if (!rawBody) return '';
+  const lines = rawBody.split('\n');
+  const items = [];
+  let header = '';
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+
+    // Header markdown (### Title / ## Title)
+    if (line.startsWith('#')) {
+      header = line.replace(/^#+\s*/, '');
+      continue;
+    }
+
+    // Bullet points (- Item / * Item / • Item)
+    if (/^[-*•]\s+/.test(line)) {
+      const cleanLine = line.replace(/^[-*•]\s+/, '');
+      // Format bold **text** and inline `code`
+      const formattedLine = cleanLine
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      items.push(formattedLine);
+    } else {
+      const formattedLine = line
+        .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>');
+      items.push(formattedLine);
+    }
+  }
+
+  let html = '';
+  if (header) {
+    html += `<div class="ota-desc-header">${header}</div>`;
+  }
+  if (items.length > 0) {
+    html += `<div class="ota-desc-list">` + items.map(item => `
+      <div class="ota-desc-item">
+        <span class="ota-desc-bullet">•</span>
+        <span>${item}</span>
+      </div>
+    `).join('') + `</div>`;
+  } else {
+    html += `<div>Versi terbaru telah dirilis di GitHub dengan perbaikan dan peningkatan fitur.</div>`;
+  }
+
+  return html;
+}
+
 function handleVersionCheck(remoteVersion, releaseData, isManual) {
   if (!remoteVersion) return;
 
@@ -326,7 +376,9 @@ function handleVersionCheck(remoteVersion, releaseData, isManual) {
   if (isNewer) {
     if (otaBanner) otaBanner.style.display = 'flex';
     if (otaNewVerBadge) otaNewVerBadge.textContent = `v${remoteVersion}`;
-    if (otaDesc) otaDesc.textContent = releaseData?.body || `Versi v${remoteVersion} tersedia dengan perbaikan terbaru.`;
+    if (otaDesc) {
+      otaDesc.innerHTML = formatMarkdownReleaseNotes(releaseData?.body);
+    }
     if (updateStatusText) updateStatusText.textContent = `Update v${remoteVersion} tersedia!`;
 
     btnOtaDownload.onclick = () => {

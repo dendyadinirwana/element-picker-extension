@@ -179,6 +179,45 @@
       font-size: 11px;
       color: var(--foreground);
       line-height: 1.4;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .ota-desc-header {
+      font-weight: 600;
+      font-size: 11px;
+      color: var(--foreground);
+    }
+
+    .ota-desc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      padding-left: 2px;
+    }
+
+    .ota-desc-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 5px;
+      font-size: 10.5px;
+      color: var(--foreground);
+      line-height: 1.35;
+    }
+
+    .ota-desc-bullet {
+      color: var(--warning);
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+
+    .ota-desc code {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      background: rgba(0,0,0,0.06);
+      padding: 1px 4px;
+      border-radius: 3px;
     }
 
     .ota-actions {
@@ -580,7 +619,9 @@
           <span id="otaNewVerBadge" class="badge-version" style="background: var(--warning); color: #000; border: none;">v1.8.1</span>
         </div>
       </div>
-      <p class="ota-desc" id="otaDesc">Versi terbaru telah dirilis di GitHub dengan perbaikan dan peningkatan fitur.</p>
+      <div class="ota-desc" id="otaDesc">
+        <div>Versi terbaru telah dirilis di GitHub dengan perbaikan dan peningkatan fitur.</div>
+      </div>
       <div class="ota-actions">
         <button class="btn-ota-download" id="btnOtaDownload">
           <span>📥 Download & Reload Extension</span>
