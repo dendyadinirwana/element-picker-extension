@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Element Picker</title>
+  <style>
+    /* ─── Shadcn UI Design Tokens (UI/UX Pro Max) ─────────────────────────── */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --background: #ffffff;
+      --foreground: #09090b;
+      --muted: #f4f4f5;
+      --muted-foreground: #71717a;
+      --popover: #ffffff;
+      --popover-foreground: #09090b;
+      --border: #e4e4e7;
+      --input: #e4e4e7;
+      --card: #ffffff;
+      --card-foreground: #09090b;
+      --primary: #0284c7;
+      --primary-foreground: #ffffff;
+      --primary-subtle: #f0f9ff;
+      --primary-border: #bae6fd;
+      --secondary: #f4f4f5;
+      --secondary-foreground: #18181b;
+      --accent: #f4f4f5;
+      --accent-foreground: #18181b;
+      --destructive: #ef4444;
+      --destructive-foreground: #ffffff;
+      --ring: #0284c7;
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+      --font-mono: ui-monospace, 'SF Mono', Menlo, Monaco, Consolas, monospace;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --background: #09090b;
+        --foreground: #f4f4f5;
+        --muted: #18181b;
+        --muted-foreground: #a1a1aa;
+        --popover: #09090b;
+        --popover-foreground: #f4f4f5;
+        --border: #27272a;
+        --input: #27272a;
+        --card: #121215;
+        --card-foreground: #f4f4f5;
+        --primary: #38bdf8;
+        --primary-foreground: #09090b;
+        --primary-subtle: rgba(56, 189, 248, 0.12);
+        --primary-border: rgba(56, 189, 248, 0.28);
+        --secondary: #18181b;
+        --secondary-foreground: #f4f4f5;
+        --accent: #18181b;
+        --accent-foreground: #f4f4f5;
+        --ring: #38bdf8;
+      }
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--background);
+      color: var(--foreground);
+      font-size: 12px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    /* ─── Header ───────────────────────────────────────────────────────────── */
+    .header {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--background);
+      flex-shrink: 0;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: var(--radius-sm);
+      object-fit: contain;
+    }
+
+    .brand-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--foreground);
+      letter-spacing: -0.2px;
+    }
+
+    .badge-version {
+      font-size: 10px;
+      font-family: var(--font-mono);
+      padding: 2px 7px;
+      background: var(--muted);
+      color: var(--muted-foreground);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    /* ─── Main Scroll Container ────────────────────────────────────────────── */
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .main-content::-webkit-scrollbar {
+      width: 5px;
+    }
+    .main-content::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 4px;
+    }
+
+    /* ─── Primary Controls Card ────────────────────────────────────────────── */
+    .controls-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-toggle {
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--muted);
+      color: var(--foreground);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      font-family: inherit;
+    }
+
+    .btn-toggle:hover {
+      background: var(--accent);
+      border-color: #cbd5e1;
+    }
+
+    .btn-toggle.active {
+      background: var(--primary-subtle);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #a1a1aa;
+      transition: all 0.2s ease;
+    }
+
+    .btn-toggle.active .status-dot {
+      background: var(--primary);
+      box-shadow: 0 0 8px var(--primary);
+    }
+
+    .btn-snip {
+      width: 100%;
+      padding: 9px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--background);
+      color: var(--foreground);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s ease;
+      font-family: inherit;
+    }
+
+    .btn-snip:hover {
+      background: var(--muted);
+      border-color: #cbd5e1;
+    }
+
+    /* ─── Selected Element Live Inspector Card ──────────────────────────────── */
+    .section-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .section-header {
+      padding: 10px 12px;
+      background: var(--muted);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .inspect-empty {
+      padding: 24px 16px;
+      text-align: center;
+      color: var(--muted-foreground);
+      font-size: 11px;
+    }
+
+    .inspect-content {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tag-badge {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      color: var(--primary);
+      background: var(--primary-subtle);
+      border: 1px solid var(--primary-border);
+      padding: 4px 8px;
+      border-radius: var(--radius-sm);
+      word-break: break-all;
+      font-weight: 600;
+    }
+
+    .style-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .style-cell {
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .style-label {
+      font-size: 9px;
+      font-weight: 600;
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .style-val {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--foreground);
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .swatch-square {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      border: 1px solid rgba(0,0,0,0.15);
+      flex-shrink: 0;
+    }
+
+    /* ─── Actions Grid ──────────────────────────────────────────────────────── */
+    .actions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .act-btn {
+      padding: 7px 8px;
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      color: var(--foreground);
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.12s ease;
+      font-family: inherit;
+    }
+
+    .act-btn:hover {
+      background: var(--accent);
+      border-color: #cbd5e1;
+      color: var(--primary);
+    }
+
+    .act-btn.full-width {
+      grid-column: span 2;
+      justify-content: center;
+      background: var(--primary-subtle);
+      border-color: var(--primary-border);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .act-btn.full-width:hover {
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    /* ─── Shortcuts List ────────────────────────────────────────────────────── */
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .shortcut-row:last-child {
+      border-bottom: none;
+    }
+
+    .shortcut-name {
+      font-size: 11px;
+      color: var(--muted-foreground);
+    }
+
+    .key-group {
+      display: flex;
+      gap: 3px;
+    }
+
+    .kbd-badge {
+      background: var(--muted);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 9px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--foreground);
+    }
+
+    /* ─── Footer ───────────────────────────────────────────────────────────── */
+    .footer {
+      padding: 10px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--muted-foreground);
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="brand-group">
+      <img src="icons/icon32.png" alt="Logo" class="brand-icon" />
+      <span class="brand-title">Element Picker</span>
+    </div>
+    <span class="badge-version" id="versionTag">v1.8.0</span>
+  </header>
+
+  <!-- Main Scroll View -->
+  <main class="main-content">
+    <!-- Controls Section -->
+    <div class="controls-card">
+      <button class="btn-toggle" id="toggleBtn">
+        <span id="btnLabel">Enable Inspector</span>
+        <div class="status-pill">
+          <span id="statusStateText">OFF</span>
+          <span class="status-dot"></span>
+        </div>
+      </button>
+      <button class="btn-snip" id="snipBtn">
+        <span>✂️</span>
+        <span>Area Snip (Box Cropper)</span>
+      </button>
+    </div>
+
+    <!-- Active Inspect Details Card -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Selected Element</span>
+        <span id="tabStatusBadge" style="font-size: 9px; color: var(--muted-foreground); font-family: var(--font-mono);">Live DOM</span>
+      </div>
+      <div id="inspectContainer">
+        <div class="inspect-empty" id="inspectEmpty">
+          Klik atau pilih elemen di halaman web untuk melihat detail computed style & aksi ekspor.
+        </div>
+        <div class="inspect-content" id="inspectContent" style="display: none;">
+          <div class="tag-badge" id="inspectTag">&lt;div.container&gt;</div>
+          
+          <div class="style-grid">
+            <div class="style-cell">
+              <span class="style-label">Dimensions</span>
+              <span class="style-val" id="valDim">320 × 180</span>
+            </div>
+            <div class="style-cell">
+              <span class="style-label">Font Family</span>
+              <span class="style-val" id="valFont">Inter 14px</span>
+            </div>
+            <div class="style-cell">
+              <span class="style-label">Text Color</span>
+              <span class="style-val" id="valTextColor">
+                <span class="swatch-square" id="swatchText"></span>
+                <span id="txtTextColor">#000000</span>
+              </span>
+            </div>
+            <div class="style-cell">
+              <span class="style-label">Background</span>
+              <span class="style-val" id="valBgColor">
+                <span class="swatch-square" id="swatchBg"></span>
+                <span id="txtBgColor">#ffffff</span>
+              </span>
+            </div>
+          </div>
+
+          <div class="actions-grid">
+            <button class="act-btn" id="actCopyHtml"><span>&lt;/&gt;</span><span>HTML</span></button>
+            <button class="act-btn" id="actCopyJsx"><span>⚛</span><span>JSX</span></button>
+            <button class="act-btn" id="actCopyPng"><span>📷</span><span>PNG</span></button>
+            <button class="act-btn" id="actCopyCss"><span>🎨</span><span>CSS Rules</span></button>
+            <button class="act-btn" id="actCopySelector"><span>#</span><span>Selector</span></button>
+            <button class="act-btn" id="actCopyText"><span>T</span><span>Text</span></button>
+            <button class="act-btn full-width" id="actSaveZip"><span>📦</span><span>Export Standalone ZIP</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts -->
+    <div class="section-card">
+      <div class="section-header">
+        <span class="section-title">Shortcuts</span>
+      </div>
+      <div style="padding: 8px 12px;">
+        <div class="shortcut-row">
+          <span class="shortcut-name">Toggle Inspector</span>
+          <div class="key-group"><span class="kbd-badge">&#8984;/Ctrl</span><span class="kbd-badge">Shift</span><span class="kbd-badge">X</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-name">Area Snip / Crop</span>
+          <div class="key-group"><span class="kbd-badge">&#8984;/Ctrl</span><span class="kbd-badge">Shift</span><span class="kbd-badge">S</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-name">Parent / Child</span>
+          <div class="key-group"><span class="kbd-badge">Alt</span><span class="kbd-badge">↑ / ↓</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-name">Close Menu / Deselect</span>
+          <div class="key-group"><span class="kbd-badge">Esc</span></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <span>Element Picker Sidebar</span>
+    <span>Shadcn UI</span>
+  </footer>
+
+  <script src="sidepanel.js"></script>
+</body>
+</html>

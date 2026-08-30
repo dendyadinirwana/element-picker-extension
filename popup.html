@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Element Picker</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #ffffff;
+      --surface: #f8fafc;
+      --surface-hover: #f1f5f9;
+      --border: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-subtle: #94a3b8;
+      --primary: #0284c7;
+      --primary-light: #f0f9ff;
+      --primary-border: #bae6fd;
+      --primary-glow: rgba(2, 132, 199, 0.4);
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+    }
+
+    html, body {
+      width: 290px;
+      min-width: 290px;
+      max-width: 290px;
+      background: var(--surface);
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', Roboto, sans-serif;
+      color: var(--text-main);
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg);
+      width: 100%;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .logo {
+      width: 26px;
+      height: 26px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+    }
+
+    .logo svg { width: 14px; height: 14px; }
+
+    .title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      letter-spacing: -0.2px;
+      line-height: 1.2;
+    }
+
+    .version-tag {
+      font-size: 10px;
+      font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+      color: var(--text-muted);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 9999px;
+      font-weight: 500;
+    }
+
+    /* Main Toggle CTA */
+    .toggle-area {
+      padding: 12px 14px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      width: 100%;
+    }
+
+    .toggle-btn {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-main);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    }
+
+    .toggle-btn:hover {
+      background: var(--surface-hover);
+      border-color: #cbd5e1;
+    }
+
+    .toggle-btn.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      box-shadow: 0 0 0 1px var(--primary-glow);
+    }
+
+    .toggle-status-group {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #cbd5e1;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .toggle-btn.active .status-dot {
+      background: var(--primary);
+      box-shadow: 0 0 6px var(--primary-glow);
+    }
+
+    .toggle-state-label {
+      font-size: 10px;
+      font-weight: 500;
+      color: var(--text-subtle);
+    }
+
+    .toggle-btn.active .toggle-state-label {
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    /* Section Cards */
+    .section {
+      padding: 11px 14px;
+      background: var(--bg);
+      margin-top: 6px;
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      width: 100%;
+    }
+
+    .section-label {
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.6px;
+      color: var(--text-subtle);
+      text-transform: uppercase;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .shortcut-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .shortcut-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .shortcut-label {
+      font-size: 11px;
+      color: #334155;
+      font-weight: 500;
+    }
+
+    .keys {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+    }
+
+    .key {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-bottom: 2px solid #cbd5e1;
+      border-radius: 4px;
+      padding: 1px 5px;
+      font-size: 9px;
+      color: #334155;
+      font-family: ui-monospace, 'SF Mono', monospace;
+      font-weight: 600;
+    }
+
+    /* Feature Grid / Pill list */
+    .feature-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 7px;
+      font-size: 10px;
+      color: var(--text-muted);
+      line-height: 1.35;
+    }
+
+    .feature-icon {
+      font-size: 11px;
+      color: var(--primary);
+      flex-shrink: 0;
+      margin-top: -1px;
+    }
+
+    .footer-bar {
+      padding: 9px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-subtle);
+      background: var(--surface);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-brand">
+        <img src="icons/icon32.png" class="logo-img" alt="Logo" style="width: 24px; height: 24px; object-fit: contain; border-radius: var(--radius-sm);" />
+        <div class="title">Element Picker</div>
+      </div>
+      <div class="version-tag" id="versionTag">v1.7.3</div>
+    </div>
+
+    <!-- Toggle Area -->
+    <div class="toggle-area">
+      <button class="toggle-btn" id="toggleBtn">
+        <span id="btnLabel">Enable Inspector</span>
+        <div class="toggle-status-group">
+          <span class="toggle-state-label" id="statusStateText">OFF</span>
+          <div class="status-dot" id="statusDot"></div>
+        </div>
+      </button>
+      <button class="snip-btn" id="snipBtn" style="margin-top: 6px; width: 100%; padding: 8px 12px; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-size: 11px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s ease;">
+        <span>✂️</span>
+        <span>Area Snip (Box Cropper)</span>
+      </button>
+    </div>
+
+    <!-- Shortcuts -->
+    <div class="section">
+      <div class="section-label">Shortcuts</div>
+      <div class="shortcut-list">
+        <div class="shortcut-row">
+          <span class="shortcut-label">Toggle (Mac)</span>
+          <div class="keys"><span class="key">&#8984;</span><span class="key">Shift</span><span class="key">X</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Toggle (Win/Linux)</span>
+          <div class="keys"><span class="key">Ctrl</span><span class="key">Shift</span><span class="key">X</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Area Snip Crop</span>
+          <div class="keys"><span class="key">&#8984;/Ctrl</span><span class="key">Shift</span><span class="key">S</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Parent / Child</span>
+          <div class="keys"><span class="key">Alt</span><span class="key">↑ / ↓</span></div>
+        </div>
+        <div class="shortcut-row">
+          <span class="shortcut-label">Close menu</span>
+          <div class="keys"><span class="key">Esc</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Capabilities -->
+    <div class="section" style="margin-top: 1px;">
+      <div class="section-label">Key Capabilities</div>
+      <div class="feature-list">
+        <div class="feature-item">
+          <span class="feature-icon">✦</span>
+          <span><strong>Live CSS Inspect:</strong> Font name, size, dimensions & color HEX preview on hover.</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">✦</span>
+          <span><strong>Fast Copy:</strong> Click any badge in menu to instant-copy HEX color or font.</span>
+        </div>
+        <div class="feature-item">
+          <span class="feature-icon">✦</span>
+          <span><strong>Export Engine:</strong> Clean standalone HTML, JSX (React), PNG screenshot, or ZIP.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-bar">
+      <span>Ready to inspect any webpage</span>
+      <span>⌘+Shift+X</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
