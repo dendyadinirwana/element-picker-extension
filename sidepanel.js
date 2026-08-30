@@ -1,15 +1,23 @@
 // Element Picker Side Panel Logic (Shadcn / UI-UX Pro Max)
 
+const GITHUB_REPO = 'dendyadinirwana/element-picker-extension';
+
+// UI Elements
 const toggleBtn = document.getElementById('toggleBtn');
 const snipBtn = document.getElementById('snipBtn');
 const btnLabel = document.getElementById('btnLabel');
 const statusStateText = document.getElementById('statusStateText');
+const statusDot = document.getElementById('statusDot');
 const versionTag = document.getElementById('versionTag');
 
 const inspectEmpty = document.getElementById('inspectEmpty');
 const inspectContent = document.getElementById('inspectContent');
 const inspectTag = document.getElementById('inspectTag');
 const valDim = document.getElementById('valDim');
+const valLayout = document.getElementById('valLayout');
+const valPadding = document.getElementById('valPadding');
+const valMargin = document.getElementById('valMargin');
+const valBorder = document.getElementById('valBorder');
 const valFont = document.getElementById('valFont');
 const valTextColor = document.getElementById('valTextColor');
 const valBgColor = document.getElementById('valBgColor');
@@ -18,7 +26,7 @@ const txtTextColor = document.getElementById('txtTextColor');
 const swatchBg = document.getElementById('swatchBg');
 const txtBgColor = document.getElementById('txtBgColor');
 
-// Action buttons
+// Action buttons (Dedicated Export Section)
 const actCopyHtml = document.getElementById('actCopyHtml');
 const actCopyJsx = document.getElementById('actCopyJsx');
 const actCopyPng = document.getElementById('actCopyPng');
@@ -27,15 +35,89 @@ const actCopySelector = document.getElementById('actCopySelector');
 const actCopyText = document.getElementById('actCopyText');
 const actSaveZip = document.getElementById('actSaveZip');
 
-let currentTabId = null;
+// OTA Elements
+const otaBanner = document.getElementById('otaBanner');
+const otaNewVerBadge = document.getElementById('otaNewVerBadge');
+const otaDesc = document.getElementById('otaDesc');
+const btnOtaDownload = document.getElementById('btnOtaDownload');
+const btnCheckUpdate = document.getElementById('btnCheckUpdate');
+const updateStatusText = document.getElementById('updateStatusText');
+const changelogList = document.getElementById('changelogList');
 
-// Dynamically set manifest version
-if (versionTag && chrome.runtime?.getManifest) {
+let currentTabId = null;
+let currentActiveVersion = '1.8.0';
+
+// Changelog data
+const CHANGELOG_DATA = [
+  {
+    version: '1.8.0',
+    date: '2026-08-30',
+    highlights: [
+      'Side Panel First: Extension sekarang otomatis membuka sidebar (Side Panel) di sisi kanan browser.',
+      'Shadcn UI & UI/UX Pro Max: Token warna modern, kontras tinggi, auto dark/light mode.',
+      'Explicit CTA: Tombol utama "Activate picker" dan "Deactivate picker" dengan feedback status instan.',
+      'Deep Computed Metrics: Menampilkan detail Box Model, display, position, padding, margin, border, dan typography.',
+      'Dedicated Export Section: Bagian terpisah untuk aksi copy Clean HTML, React JSX, PNG, CSS Rules, Selector, dan Standalone ZIP.',
+      'Area Snip (Box Cropper): Fitur crop canvas atau sembarang area layar (⌘/Ctrl+Shift+S).',
+      'OTA Updates via GitHub: Pengecekan rilis otomatis langsung dari repository dendyadinirwana/element-picker-extension.'
+    ]
+  },
+  {
+    version: '1.7.4',
+    date: '2026-08-30',
+    highlights: [
+      'Fitur baru: Area Snip (Box Cropper) untuk memotong elemen canvas / raster grafik ke clipboard.',
+      'Global shortcut ⌘/Ctrl+Shift+S untuk instant snip.'
+    ]
+  },
+  {
+    version: '1.7.2',
+    date: '2026-08-30',
+    highlights: [
+      'Perbaikan bug breadcrumb undefined pada elemen ber-prefix.',
+      'Fallback clipboard untuk non-secure/iframe context.',
+      'Peningkatan generator React JSX dengan void tag HTML5 lengkap.'
+    ]
+  }
+];
+
+// Initialize Manifest Version
+if (chrome.runtime?.getManifest) {
   const manifest = chrome.runtime.getManifest();
   if (manifest?.version) {
-    versionTag.textContent = `v${manifest.version}`;
+    currentActiveVersion = manifest.version;
+    if (versionTag) versionTag.textContent = `v${manifest.version}`;
+    if (updateStatusText) updateStatusText.textContent = `v${manifest.version} up to date`;
   }
 }
+
+// Render Changelog Accordion
+function renderChangelog() {
+  if (!changelogList) return;
+  changelogList.innerHTML = CHANGELOG_DATA.map((item, idx) => `
+    <div class="changelog-item">
+      <div class="changelog-header" data-idx="${idx}">
+        <span>v${item.version} <span style="font-weight: 400; color: var(--muted-foreground); font-size: 9px;">(${item.date})</span></span>
+        <span style="font-size: 9px;">${idx === 0 ? '▼' : '▶'}</span>
+      </div>
+      <div class="changelog-body" id="cb-${idx}" style="display: ${idx === 0 ? 'flex' : 'none'};">
+        ${item.highlights.map(h => `<div>• ${h}</div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+
+  changelogList.querySelectorAll('.changelog-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const idx = header.getAttribute('data-idx');
+      const body = document.getElementById(`cb-${idx}`);
+      const isVisible = body.style.display === 'flex';
+      body.style.display = isVisible ? 'none' : 'flex';
+      header.querySelector('span:last-child').textContent = isVisible ? '▶' : '▼';
+    });
+  });
+}
+
+renderChangelog();
 
 // Initialize active tab state
 async function initPanel() {
@@ -58,7 +140,7 @@ async function initPanel() {
 
 initPanel();
 
-// Toggle Button
+// Toggle Button (Activate picker / Deactivate picker)
 toggleBtn?.addEventListener('click', async () => {
   if (!currentTabId) return;
   chrome.runtime.sendMessage({ action: 'quickToggle' }, (response) => {
@@ -94,12 +176,14 @@ actSaveZip?.addEventListener('click', () => sendTabAction('ep-save'));
 function updateUI(isActive) {
   if (isActive) {
     toggleBtn?.classList.add('active');
-    if (btnLabel) btnLabel.textContent = 'Picker Active';
-    if (statusStateText) statusStateText.textContent = 'ON';
+    if (btnLabel) btnLabel.textContent = 'Deactivate picker';
+    if (statusStateText) statusStateText.textContent = 'ACTIVE';
+    if (statusDot) statusDot.style.display = 'inline-block';
   } else {
     toggleBtn?.classList.remove('active');
-    if (btnLabel) btnLabel.textContent = 'Enable Inspector';
+    if (btnLabel) btnLabel.textContent = 'Activate picker';
     if (statusStateText) statusStateText.textContent = 'OFF';
+    if (statusDot) statusDot.style.display = 'none';
   }
 }
 
@@ -113,16 +197,110 @@ function renderElementInfo(data) {
   if (inspectEmpty) inspectEmpty.style.display = 'none';
   if (inspectContent) inspectContent.style.display = 'flex';
 
+  const st = data.styles || {};
+
   if (inspectTag) inspectTag.textContent = data.label || '<element>';
-  if (valDim) valDim.textContent = `${data.styles?.width || 0} × ${data.styles?.height || 0}`;
-  if (valFont) valFont.textContent = `${data.styles?.primaryFont || 'System'} ${data.styles?.fontSize || ''}`;
+  if (valDim) valDim.textContent = `${st.width || 0} × ${st.height || 0} px`;
+  if (valLayout) valLayout.textContent = `${st.display || 'block'} (${st.position || 'static'})`;
+  if (valPadding) valPadding.textContent = st.padding || '0px';
+  if (valMargin) valMargin.textContent = st.margin || '0px';
+  if (valBorder) valBorder.textContent = `${st.border || 'none'} (${st.borderRadius || '0px'})`;
 
-  if (txtTextColor) txtTextColor.textContent = data.styles?.textColorHex || '#000000';
-  if (swatchText) swatchText.style.backgroundColor = data.styles?.textColorHex || '#000000';
+  if (valFont) valFont.textContent = `${st.primaryFont || 'System'} (${st.fontSize || '16px'} / ${st.fontWeight || '400'})`;
 
-  if (txtBgColor) txtBgColor.textContent = data.styles?.bgHex || '#ffffff';
-  if (swatchBg) swatchBg.style.backgroundColor = data.styles?.bgHex || '#ffffff';
+  if (txtTextColor) txtTextColor.textContent = st.textColorHex || '#000000';
+  if (swatchText) swatchText.style.backgroundColor = st.textColorHex || '#000000';
+
+  if (txtBgColor) txtBgColor.textContent = st.bgHex || '#ffffff';
+  if (swatchBg) swatchBg.style.backgroundColor = st.bgHex || '#ffffff';
 }
+
+// ─── OTA Updates Checker & Reloader ──────────────────────────────────────────
+async function checkGithubOTA(isManual = false) {
+  if (updateStatusText && isManual) updateStatusText.textContent = 'Memeriksa GitHub...';
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest?_t=${Date.now()}`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+
+    if (!res.ok) {
+      // Fallback check manifest.json in main branch if no formal release yet
+      const rawRes = await fetch(`https://raw.githubusercontent.com/${GITHUB_REPO}/main/manifest.json?_t=${Date.now()}`);
+      if (rawRes.ok) {
+        const rawManifest = await rawRes.json();
+        handleVersionCheck(rawManifest.version, null, isManual);
+        return;
+      }
+      throw new Error('Gagal mengakses GitHub API');
+    }
+
+    const release = await res.json();
+    const remoteTag = (release.tag_name || '').replace(/^v/, '');
+    handleVersionCheck(remoteTag, release, isManual);
+  } catch (err) {
+    if (updateStatusText) updateStatusText.textContent = `v${currentActiveVersion} up to date`;
+    if (isManual) alert('Tidak dapat terhubung ke GitHub: ' + err.message);
+  }
+}
+
+function handleVersionCheck(remoteVersion, releaseData, isManual) {
+  if (!remoteVersion) return;
+
+  const isNewer = compareVersions(remoteVersion, currentActiveVersion) > 0;
+  if (isNewer) {
+    if (otaBanner) otaBanner.style.display = 'flex';
+    if (otaNewVerBadge) otaNewVerBadge.textContent = `v${remoteVersion}`;
+    if (otaDesc) otaDesc.textContent = releaseData?.body || `Versi v${remoteVersion} tersedia dengan perbaikan terbaru.`;
+    if (updateStatusText) updateStatusText.textContent = `Update v${remoteVersion} tersedia!`;
+
+    btnOtaDownload.onclick = () => {
+      downloadAndReloadUpdate(remoteVersion, releaseData);
+    };
+  } else {
+    if (otaBanner) otaBanner.style.display = 'none';
+    if (updateStatusText) updateStatusText.textContent = `v${currentActiveVersion} versi terbaru`;
+    if (isManual) {
+      alert(`Extension sudah versi terbaru (v${currentActiveVersion}).`);
+    }
+  }
+}
+
+function compareVersions(v1, v2) {
+  const p1 = v1.split('.').map(Number);
+  const p2 = v2.split('.').map(Number);
+  for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+    const num1 = p1[i] || 0;
+    const num2 = p2[i] || 0;
+    if (num1 > num2) return 1;
+    if (num1 < num2) return -1;
+  }
+  return 0;
+}
+
+function downloadAndReloadUpdate(version, releaseData) {
+  const downloadUrl = releaseData?.assets?.[0]?.browser_download_url || `https://github.com/${GITHUB_REPO}/archive/refs/heads/main.zip`;
+
+  chrome.downloads.download({
+    url: downloadUrl,
+    filename: `element-picker-v${version}.zip`,
+    saveAs: false
+  }, (downloadId) => {
+    if (chrome.runtime.lastError) {
+      window.open(`https://github.com/${GITHUB_REPO}/releases/latest`, '_blank');
+      return;
+    }
+    alert(`Update v${version} berhasil diunduh ke folder Downloads! Ekstensi akan otomatis di-reload.`);
+    setTimeout(() => {
+      chrome.runtime.reload();
+    }, 1000);
+  });
+}
+
+btnCheckUpdate?.addEventListener('click', () => checkGithubOTA(true));
+
+// Auto check OTA on mount
+checkGithubOTA(false);
 
 // Listen for updates from content script
 chrome.runtime.onMessage.addListener((message, sender) => {

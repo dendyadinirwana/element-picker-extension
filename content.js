@@ -192,32 +192,42 @@
     const computed = window.getComputedStyle(el);
     const rect = el.getBoundingClientRect();
 
-    // Primary font name
+    // Primary font name & typography
     const rawFont = computed.fontFamily || '';
     const primaryFont = rawFont.split(',')[0].replace(/['"]/g, '').trim() || 'System';
     const fontSize = computed.fontSize || '16px';
     const fontWeight = computed.fontWeight || '400';
+    const lineHeight = computed.lineHeight || 'normal';
 
     // Colors
     const textColorHex = rgbToHex(computed.color) || '#000000';
     const bgHex = rgbToHex(computed.backgroundColor) || getEffectiveBackgroundColor(el);
 
-    // Box model
+    // Box model & metrics
     const width = Math.round(rect.width);
     const height = Math.round(rect.height);
-    const borderRadius = computed.borderRadius !== '0px' ? computed.borderRadius : '';
+    const borderRadius = computed.borderRadius !== '0px' ? computed.borderRadius : '0px';
+    const padding = `${computed.paddingTop} ${computed.paddingRight} ${computed.paddingBottom} ${computed.paddingLeft}`;
+    const margin = `${computed.marginTop} ${computed.marginRight} ${computed.marginBottom} ${computed.marginLeft}`;
+    const display = computed.display;
+    const position = computed.position;
+    const border = `${computed.borderWidth} ${computed.borderStyle} ${rgbToHex(computed.borderColor) || computed.borderColor}`;
 
     return {
       primaryFont,
       fontSize,
       fontWeight,
+      lineHeight,
       textColorHex,
       bgHex,
       width,
       height,
       borderRadius,
-      lineHeight: computed.lineHeight,
-      display: computed.display
+      padding,
+      margin,
+      display,
+      position,
+      border
     };
   }
 
